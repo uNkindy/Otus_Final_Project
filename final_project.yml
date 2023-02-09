@@ -1,0 +1,10 @@
+---
+- name: Prepare stand for work, install packets
+  become: true
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Upgrade distro
+      yum:  
+        name: '*'
+        state: latest
