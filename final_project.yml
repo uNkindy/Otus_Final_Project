@@ -8,3 +8,17 @@
       yum:  
         name: '*'
         state: latest
+
+    - name: Install yum-utils
+      yum:
+        name: yum-utils
+        state: latest
+
+    - name: Install nano
+      yum:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: latest 
