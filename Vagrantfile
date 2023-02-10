@@ -27,25 +27,25 @@ Vagrant.configure("2") do |config|
         end
     
     
-      config.vm.define "host3" do |host3|
-        host3.vm.box = 'centos/7'
+    config.vm.define "host3" do |host3|
+      host3.vm.box = 'centos/7'
     
-        host3.vm.host_name = 'host3'
-        host3.vm.network "private_network", ip: "192.168.56.242"
+      host3.vm.host_name = 'host3'
+      host3.vm.network "private_network", ip: "192.168.56.242"
       
-        host3.vm.provider "virtualbox" do |vb|
+      host3.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+      end
+      end
+
+    config.vm.define "host4" do |host4|
+        host4.vm.box = 'centos/7'
+        
+        host4.vm.host_name = 'host4'
+        host4.vm.network "private_network", ip: "192.168.56.243"
+          
+        host4.vm.provider "virtualbox" do |vb|
           vb.memory = "2048"
         end
         end
-
-      config.vm.define "host4" do |host4|
-          host4.vm.box = 'centos/7'
-        
-          host4.vm.host_name = 'host4'
-          host4.vm.network "private_network", ip: "192.168.56.243"
-          
-          host4.vm.provider "virtualbox" do |vb|
-            vb.memory = "2048"
-          end
-          end
     end
