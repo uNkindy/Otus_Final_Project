@@ -1,24 +1,262 @@
 ---
-- name: Prepare stand for work, install packets
+- name: Prepare and install WordPress
   become: true
-  gather_facts: false
-  hosts: all
+  gather_facts: true
+  hosts: host2
+  tags: 
+    - host2
   tasks:
-    - name: Upgrade distro
-      yum:  
-        name: '*'
+    - name: Install Apache
+      yum:
+        name: httpd
         state: latest
+
+    - name: Start Apache
+      systemd: 
+        name: httpd
+        state: started
+    
+    - name: Install repos for php 7,4 №1
+      shell: yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
+    - name: Install repos for php 7,4 №2
+      shell: yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm
 
     - name: Install yum-utils
       yum:
         name: yum-utils
+        state: present
+    
+    - name: Enable remi-php74
+      shell: yum-config-manager --enable remi-php74
+
+    - name: Update all packets
+      yum:
+        name: '*' 
         state: latest
 
-    - name: Install nano
+    - name: Install PHP 7.4 packets
       yum:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-compose-plugin
-        state: latest 
+        name: 
+          - php
+          - php-cli
+          - php-mysql
+        state: present
+
+    - name: Restart Apache
+      systemd: 
+        name: httpd
+        state: restarted
+
+- name: Prepare and install MySQL on host2
+  become: true
+  gather_facts: true
+  hosts: host2
+  tags: 
+    - host2
+    - sql
+  tasks:
+    - name: Install epel-release
+      package:
+        name: epel-release
+        state: present
+        update_cache: yes
+
+    - name: Install needed soft
+      package:
+        name: 
+         - nano
+         - gcc
+         - unzip
+         - python-pip    
+         - python-devel
+         - mysql-devel
+        state: present
+        update_cache: yes
+
+    - name: Install pip mysql-python for Ansible <=> MySQL
+      pip:
+        name: mysql-python
+        state: present
+
+    - name: Copy repos for MySQL
+      copy:
+        src: files/mysql-community.repo
+        dest: /etc/yum.repos.d/mysql-community.repo
+        mode: '0644'
+
+    - name: Copy GPG key for repos
+      copy:
+        src: files/RPM-GPG-KEY-mysql
+        dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-mysql
+        mode: '0644'
+
+    - name: Update all packets
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Install MySQL Server
+      yum:
+        name: mysql-server
+        state: latest
+
+    - name: Start MySQL Server
+      systemd:
+        name: mysqld
+        state: started
+        enabled: true
+
+- name: Create new db and add new user
+  become: true
+  gather_facts: false
+  hosts: host2
+  tags:
+    - usersh
+    - host2
+  tasks:
+    - name: Create user root
+      community.mysql.mysql_user:
+        login_unix_socket: /var/lib/mysql/mysql.sock
+        name: root
+        password: 12345678
+        state: present
+
+    - name: Template
+      template:
+        src: templates/root.j2
+        dest: /root/.my.cnf
+        mode: '0600'
+
+    - name: Add new user
+      community.mysql.mysql_user:
+        name: wordpress
+        password: 12345678
+        host: localhost
+        priv: '*.*:ALL'
+        state: present
+
+    - name: Create a new database with name 'bobdata'
+      community.mysql.mysql_db:
+        name: wordpress
+        state: present
+
+- name: Install Wordpress
+  become: true
+  gather_facts: false
+  hosts: host2
+  tags:
+    - wp
+    - host2
+  tasks:
+  - name: Download and unzip Wordpress
+    unarchive:
+      src: https://wordpress.org/latest.zip
+      dest: /var/www/html/
+      remote_src: yes
+
+  - name: Copy config
+    copy:
+      src: files/wp-config.php
+      dest: /var/www/html/wordpress/wp-config.php
+      mode: '0644'
+
+  - name: Mkdir
+    file:
+      path: /var/www/html//wordpress/wp-content/uploads
+      state: directory
+
+  - name: Copy httpd conf
+    copy:
+      src: files/httpd.conf
+      dest: /etc/httpd/conf/httpd.conf 
+
+- name: Prepare and install MySQL
+  become: true
+  gather_facts: true
+  hosts: host1
+  tags: 
+    - host1
+  tasks:
+    - name: Install needed repos
+      package:
+        name: 
+         - yum-utils
+         - epel-release
+        state: present
+        update_cache: yes
+
+    - name: Install needed soft
+      package:
+        name: 
+         - nano
+         - gcc
+         - python-pip    
+         - python-devel
+         - mysql-devel
+        state: present
+        update_cache: yes
+
+    - name: Install pip mysql-python
+      pip:
+        name: mysql-python
+        state: present
+
+    - name: Copy repos for MySQL
+      copy:
+        src: files/mysql-community.repo
+        dest: /etc/yum.repos.d/mysql-community.repo
+        mode: '0644'
+
+    - name: Copy GPG key for repos
+      copy:
+        src: files/RPM-GPG-KEY-mysql
+        dest: /etc/pki/rpm-gpg/RPM-GPG-KEY-mysql
+        mode: '0644'
+
+    - name: Update all packets
+      yum:
+        name: '*'
+        state: latest
+
+    - name: Install MySQL Server
+      yum:
+        name: mysql-server
+        state: latest
+
+    - name: Start MySQL Server
+      systemd:
+        name: mysqld
+        state: started
+        enabled: true
+
+- name: Add new user in db
+  become: true
+  gather_facts: false
+  hosts: host1
+  tags:
+    - users
+    - host1
+  tasks:
+    - name: Create database user with name 'bob' and password '12345' with all database privileges
+      community.mysql.mysql_user:
+        login_unix_socket: /var/lib/mysql/mysql.sock
+        name: root
+        password: 12345678
+        state: present
+
+    - name: Template
+      template:
+        src: templates/root.j2
+        dest: /root/.my.cnf
+        mode: '0600'
+
+    - name: Add new user
+      community.mysql.mysql_user:
+        name: replica
+        password: 12345678
+        host: localhost
+        priv: '*.*:ALL'
+        state: present
+
+

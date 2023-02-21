@@ -17,12 +17,15 @@ Vagrant.configure("2") do |config|
     
   config.vm.define "host2" do |host2|
     host2.vm.box = 'centos/7'
+
     
     host2.vm.host_name = 'host2'
     host2.vm.network "private_network", ip: "192.168.56.241"
+    host2.vm.network "forwarded_port", guest: 80, host: 8081
       
     host2.vm.provider "virtualbox" do |vb|
       vb.memory = "2048"
+
     end
   end
     
@@ -32,6 +35,7 @@ Vagrant.configure("2") do |config|
     
     host3.vm.host_name = 'host3'
     host3.vm.network "private_network", ip: "192.168.56.242"
+    host3.vm.network "forwarded_port", guest: 80, host: 8082
       
     host3.vm.provider "virtualbox" do |vb|
       vb.memory = "2048"
