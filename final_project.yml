@@ -1,10 +1,10 @@
 ---
-- name: Prepare and install WordPress
+- name: Prepare and install WordPress on host "wordpress"
   become: true
   gather_facts: true
-  hosts: host2
+  hosts: wordpress
   tags: 
-    - host2
+    - wordpress
   tasks:
     - name: Install Apache
       yum:
@@ -48,13 +48,13 @@
         name: httpd
         state: restarted
 
-- name: Prepare and install MySQL on host2
+- name: Prepare and install MySQL on host "wordpress"
   become: true
   gather_facts: true
-  hosts: host2
+  hosts: wordpress
   tags: 
-    - host2
-    - sql
+    - wordpress
+    - db_on_wordpress
   tasks:
     - name: Install epel-release
       package:
@@ -101,53 +101,71 @@
         name: mysql-server
         state: latest
 
+    - name: Copy MySQL configuration
+      template:
+        src: templates/mysql_conf.j2
+        dest: /etc/my.cnf
+
     - name: Start MySQL Server
       systemd:
         name: mysqld
         state: started
         enabled: true
 
-- name: Create new db and add new user
+- name: Create database for WordPress and add new users "wordpress" and "replication"
   become: true
+  vars_files: defaults/main.yml
   gather_facts: false
-  hosts: host2
+  hosts: wordpress
   tags:
-    - usersh
-    - host2
+    - db_users_on_wordpress
+    - wordpress
   tasks:
-    - name: Create user root
+    - name: Make user root password
       community.mysql.mysql_user:
         login_unix_socket: /var/lib/mysql/mysql.sock
         name: root
-        password: 12345678
+        password: "{{ db_root_password_on_worpress }}"
         state: present
 
-    - name: Template
+    - name: Template login password config on host wordpress
       template:
         src: templates/root.j2
         dest: /root/.my.cnf
-        mode: '0600'
+        mode: '0644'
 
-    - name: Add new user
-      community.mysql.mysql_user:
-        name: wordpress
-        password: 12345678
-        host: localhost
-        priv: '*.*:ALL'
-        state: present
-
-    - name: Create a new database with name 'bobdata'
+    - name: Create a new database wordpress
       community.mysql.mysql_db:
         name: wordpress
         state: present
 
-- name: Install Wordpress
+    - name: Add new user "replication" and add all priveleges
+      community.mysql.mysql_user:
+        name: replication
+        password: "{{ db_replication_password_on_worpress }}"
+        host: localhost
+        priv: '*.*:ALL'
+        state: present
+      tags:
+        - rp_user
+
+    - name: Add new user "wordpress" and add all priveleges
+      community.mysql.mysql_user:
+        name: wordpress
+        password: "{{ db_wordpress_password_on_worpress }}"
+        host: localhost
+        priv: '*.*:ALL'
+        state: present
+      tags:
+        - wp_user
+
+- name: Install Wordpress on host "wordpress"
   become: true
   gather_facts: false
-  hosts: host2
+  hosts: wordpress
   tags:
-    - wp
-    - host2
+    - wp_install
+    - wordpress
   tasks:
   - name: Download and unzip Wordpress
     unarchive:
@@ -155,13 +173,13 @@
       dest: /var/www/html/
       remote_src: yes
 
-  - name: Copy config
+  - name: Copy config wordpress
     copy:
       src: files/wp-config.php
       dest: /var/www/html/wordpress/wp-config.php
       mode: '0644'
 
-  - name: Mkdir
+  - name: Mkdir for wordpress
     file:
       path: /var/www/html//wordpress/wp-content/uploads
       state: directory
@@ -171,12 +189,17 @@
       src: files/httpd.conf
       dest: /etc/httpd/conf/httpd.conf 
 
-- name: Prepare and install MySQL
+  - name: Restart httpd
+    systemd:
+      name: httpd
+      state: restarted
+
+- name: Prepare and install MySQL on host replica
   become: true
   gather_facts: true
-  hosts: host1
+  hosts: replica
   tags: 
-    - host1
+    - replica
   tasks:
     - name: Install needed repos
       package:
@@ -224,39 +247,175 @@
         name: mysql-server
         state: latest
 
+    - name: Copy MySQL configuration
+      template:
+        src: templates/mysql_conf.j2
+        dest: /etc/my.cnf
+
     - name: Start MySQL Server
       systemd:
         name: mysqld
         state: started
         enabled: true
 
-- name: Add new user in db
+- name: Create replica database, add user "root"
   become: true
-  gather_facts: false
-  hosts: host1
+  vars_files: defaults/main.yml
+  gather_facts: true
+  hosts: replica
   tags:
     - users
-    - host1
+    - replica
   tasks:
-    - name: Create database user with name 'bob' and password '12345' with all database privileges
+    - name: Create database replica, add user "root"
       community.mysql.mysql_user:
         login_unix_socket: /var/lib/mysql/mysql.sock
         name: root
-        password: 12345678
+        password: "{{ db_root_password_on_replica }}"
         state: present
 
-    - name: Template
+    - name: Template config file with password on replica
       template:
         src: templates/root.j2
         dest: /root/.my.cnf
-        mode: '0600'
+        mode: '0644'
+      tags: 
+        test1
 
-    - name: Add new user
-      community.mysql.mysql_user:
-        name: replica
-        password: 12345678
-        host: localhost
-        priv: '*.*:ALL'
+    - name: Create a new replica database wordpress
+      community.mysql.mysql_db:
+        name: wordpress
         state: present
 
+- name: Prepare replication between wordpress and replica
+  become: true
+  vars_files: defaults/main.yml
+  gather_facts: true
+  hosts: wordpress, replica
+  tags:
+    - replication
+  tasks:
+    - name: Dump database from wordpress
+      community.mysql.mysql_db:
+        state: dump
+        name: wordpress
+        target: /tmp/wordpress_backup.sql
+      when: ansible_hostname == "wordpress"
+
+    - name: Fetch database backup file to host
+      fetch:
+        src: /tmp/wordpress_backup.sql
+        dest: backup/wordpress_backup.sql
+        flat: true
+      when: ansible_hostname == "wordpress"
+
+    - name: Copy database backup file on replica
+      copy: 
+        src:  backup/wordpress_backup.sql
+        dest: /tmp/wordpress_backup.sql
+        mode: '0742'
+      when: ansible_hostname == "replica"
+
+    - name: Restore database wordpress
+      community.mysql.mysql_db:
+        name: wordpress
+        state: import
+        target: /tmp/wordpress_backup.sql
+      when: ansible_hostname == "replica"
+
+    - name: Restart MySQL on wordpress
+      systemd:
+        name: mysqld
+        state: restarted
+      when: ansible_hostname == "wordpress"
+
+    - name: Restart MySQL on wordpress
+      systemd:
+        name: mysqld
+        state: restarted
+      when: ansible_hostname == "replica"
+
+    - name: Run script .bin-log.sh
+      shell: /root/bin-log.sh
+      when: ansible_hostname == "wordpress"
+
+    - name: Fetch log file to host
+      fetch:
+        src: /root/bin-log.txt
+        dest: backup/bin-log.txt
+        flat: true 
+      when: ansible_hostname == "wordpress"
+
+- name: Start replication process
+  become: true
+  vars_files: defaults/main.yml
+  gather_facts: true
+  hosts: wordpress, replica
+  tags:
+    - starting
+  tasks:
+    - name: Start replication process
+      community.mysql.mysql_replication:
+        mode: startreplica
+        primary_log_file: "{{ bin_log_number }}"
+        primary_log_pos: "{{ queue_number }}"
+        primary_host: 192.168.56.241
+        primary_user: replication
+        primary_password: "{{ db_replication_password_on_worpress }}"
+      when: ansible_hostname == "replica"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# - name: Dump database on host2
+#   become: true
+#   gather_facts: true
+#   hosts: wordpress
+#   tags:
+#     - dump_databases
+#   tasks:
+#     - name: Dump databases
+#       community.mysql.mysql_db:
+#         state: dump
+#         name: wordpress
+#         target: /tmp/wordpress_backup.sql
+
+#     - name: Fetch database backup file
+#       fetch:
+#         src: /tmp/wordpress_backup.sql
+#         dest: backup/{{ ansible_date_time.date }}_{{ ansible_date_time.time }}_wordpress.sql
+#         flat: true
+
+# - name: Restore database wordpress on host2
+#   become: true
+#   vars_files: defaults/main.yml
+#   gather_facts: false
+#   hosts: host1
+#   tags:
+#     - restore_databases
+#   tasks:
+#     - name: Copy database backup file on wordpress
+#       copy: 
+#         src:  "{{ way_to_backup }}"
+#         dest: /tmp/wordpress_backup.sql
+#         mode: '0742'
+
+#     - name: Restore database wordpress
+#       community.mysql.mysql_db:
+#         name: wordpress
+#         state: import
+#         target: /tmp/wordpress_backup.sql
 

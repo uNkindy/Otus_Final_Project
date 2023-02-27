@@ -11,9 +11,10 @@
 # read_rnd_buffer_size = 2M
 datadir=/var/lib/mysql
 socket=/var/lib/mysql/mysql.sock
-    {% if ansible_hostname == "host1" %}
+    {% if ansible_hostname == "wordpress" %}
 server-id = 1
-    {% elif ansible_hostname == "host4" %}   
+log-bin = /var/lib/mysql/mysql-bin.log
+    {% elif ansible_hostname == "replica" %}   
 server-id = 2
     {% endif %}
 bind-address = 0.0.0.0

@@ -1,3 +1,7 @@
 [client]
 user=root
-password=12345678
+{% if ansible_hostname == "wordpress" %}
+password={{ db_root_password_on_worpress }} 
+{% elif ansible_hostname == "replica" %}
+password={{ db_root_password_on_replica }}
+{% endif %}

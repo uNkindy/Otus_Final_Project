@@ -3,52 +3,53 @@
 
 Vagrant.configure("2") do |config| 
 
-  config.vm.define "host1" do |host1|
-    host1.vm.box = 'centos/7'
+  config.vm.define "proxy" do |proxy|
+    proxy.vm.box = 'centos/7'
     
-    host1.vm.host_name = 'host1'
-    host1.vm.network "private_network", ip: "192.168.56.240"
+    proxy.vm.host_name = 'proxy'
+    proxy.vm.network "private_network", ip: "192.168.56.240"
+    proxy.vm.network "forwarded_port", guest: 80, host: 8080
     
-    host1.vm.provider "virtualbox" do |vb|
+    proxy.vm.provider "virtualbox" do |vb|
       vb.memory = "2048"
     end
   end
     
     
-  config.vm.define "host2" do |host2|
-    host2.vm.box = 'centos/7'
+  config.vm.define "wordpress" do |wordpress|
+    wordpress.vm.box = 'centos/7'
 
     
-    host2.vm.host_name = 'host2'
-    host2.vm.network "private_network", ip: "192.168.56.241"
-    host2.vm.network "forwarded_port", guest: 80, host: 8081
+    wordpress.vm.host_name = 'wordpress'
+    wordpress.vm.network "private_network", ip: "192.168.56.241"
+    wordpress.vm.network "forwarded_port", guest: 80, host: 8081
       
-    host2.vm.provider "virtualbox" do |vb|
+    wordpress.vm.provider "virtualbox" do |vb|
       vb.memory = "2048"
 
     end
   end
     
     
-  config.vm.define "host3" do |host3|
-    host3.vm.box = 'centos/7'
+  config.vm.define "replica" do |replica|
+    replica.vm.box = 'centos/7'
     
-    host3.vm.host_name = 'host3'
-    host3.vm.network "private_network", ip: "192.168.56.242"
-    host3.vm.network "forwarded_port", guest: 80, host: 8082
+    replica.vm.host_name = 'replica'
+    replica.vm.network "private_network", ip: "192.168.56.242"
+#    replica.vm.network "forwarded_port", guest: 80, host: 8082
       
-    host3.vm.provider "virtualbox" do |vb|
+    replica.vm.provider "virtualbox" do |vb|
       vb.memory = "2048"
     end
   end
 
-  config.vm.define "host4" do |host4|
-    host4.vm.box = 'centos/7'
+  config.vm.define "monitoring" do |monitoring|
+    monitoring.vm.box = 'centos/7'
         
-    host4.vm.host_name = 'host4'
-    host4.vm.network "private_network", ip: "192.168.56.243"
+    monitoring.vm.host_name = 'monitoring'
+    monitoring.vm.network "private_network", ip: "192.168.56.243"
           
-    host4.vm.provider "virtualbox" do |vb|
+    monitoring.vm.provider "virtualbox" do |vb|
       vb.memory = "2048"
     end
   end
