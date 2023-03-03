@@ -20,7 +20,12 @@
       shell: yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
     - name: Install repos for php 7,4 №2
-      shell: yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm
+      shell: yum install -y https://rpms.remirepo.net/enterprise/remi-release-7.rpm 
+
+    - name: Install xtrabackup latest from percona repo
+      yum:
+        name: xtrabackup
+        state: latest
 
     - name: Install yum-utils
       yum:
@@ -34,6 +39,7 @@
       yum:
         name: '*' 
         state: latest
+        skip_broken: true
 
     - name: Install PHP 7.4 packets
       yum:
@@ -47,6 +53,53 @@
       systemd: 
         name: httpd
         state: restarted
+        enabled: true
+
+    - name: Copy prometheus repo file
+      copy:
+        src: files/prometheus.repo
+        dest: /etc/yum.repos.d/prometheus.repo
+        mode: '0644'
+
+    - name: Copy grafana repo file
+      copy:
+        src: files/grafana.repo
+        dest: /etc/yum.repos.d/grafana.repo
+        mode: '0644'
+
+    - name: Install prometheus node exporter
+      yum:
+        name: node_exporter
+        state: present
+
+    - name: Started prometheus node exporter
+      systemd:
+        name: node_exporter
+        state: started
+        enabled: true
+
+    - name: Install loki promtail
+      yum:
+        name: promtail
+        state: present
+
+    - name: Copy loki promtail config
+      copy:
+        src:  files/config.yml
+        dest: /etc/promtail/config.yml
+        mode: '0777'
+
+    - name: Copy loki promtail config
+      copy:
+        src:  files/promtail.service
+        dest: /etc/systemd/system/promtail.service
+        mode: '0777'
+
+    - name: Started loki promtail
+      systemd:
+        name: promtail
+        state: restarted
+        enabled: true   
 
 - name: Prepare and install MySQL on host "wordpress"
   become: true
@@ -143,7 +196,7 @@
       community.mysql.mysql_user:
         name: replication
         password: "{{ db_replication_password_on_worpress }}"
-        host: localhost
+        host: 192.168.56.242
         priv: '*.*:ALL'
         state: present
       tags:
@@ -193,6 +246,34 @@
     systemd:
       name: httpd
       state: restarted
+
+  - name: Copy script for backup database every 5 minut
+    copy:
+      src: files/db_backup.sh
+      dest: /root/db_backup.sh
+      mode: '0777'
+  
+  - name: Copy unit files
+    copy:
+      src: files/backup.service
+      dest: /etc/systemd/system/backup.service
+
+  - name: Copy unit files
+    copy:
+      src: files/backup.timer
+      dest: /etc/systemd/system/backup.timer
+
+  - name: Start service backup
+    systemd:
+      name: backup.timer
+      state: started
+      enabled: true
+
+  - name: Start service backup
+    systemd:
+      name: backup.service
+      state: started
+      enabled: true
 
 - name: Prepare and install MySQL on host replica
   become: true
@@ -257,6 +338,52 @@
         name: mysqld
         state: started
         enabled: true
+
+    - name: Copy prometheus repo file
+      copy:
+        src: files/prometheus.repo
+        dest: /etc/yum.repos.d/prometheus.repo
+        mode: '0644'
+
+    - name: Copy grafana repo file
+      copy:
+        src: files/grafana.repo
+        dest: /etc/yum.repos.d/grafana.repo
+        mode: '0644'
+
+    - name: Install prometheus node exporter
+      yum:
+        name: node_exporter
+        state: present
+
+    - name: Started prometheus node exporter
+      systemd:
+        name: node_exporter
+        state: started
+        enabled: true
+
+    - name: Install loki promtail
+      yum:
+        name: promtail
+        state: present
+
+    - name: Copy loki promtail config
+      copy:
+        src:  files/config.yml
+        dest: /etc/promtail/config.yml
+        mode: '0777'
+
+    - name: Copy loki promtail config
+      copy:
+        src:  files/promtail.service
+        dest: /etc/systemd/system/promtail.service
+        mode: '0777'
+
+    - name: Started loki promtail
+      systemd:
+        name: promtail
+        state: started
+        enabled: true  
 
 - name: Create replica database, add user "root"
   become: true
@@ -335,6 +462,12 @@
         state: restarted
       when: ansible_hostname == "replica"
 
+    - name: Copy bin script to wordpress
+      copy:
+        src: files/bin-log.sh
+        dest: /root/bin-log.sh
+        mode: '0777'
+
     - name: Run script .bin-log.sh
       shell: /root/bin-log.sh
       when: ansible_hostname == "wordpress"
@@ -350,13 +483,13 @@
   become: true
   vars_files: defaults/main.yml
   gather_facts: true
-  hosts: wordpress, replica
+  hosts: replica
   tags:
     - starting
   tasks:
-    - name: Start replication process
+    - name: Confugure replication process on slave
       community.mysql.mysql_replication:
-        mode: startreplica
+        mode: changeprimary
         primary_log_file: "{{ bin_log_number }}"
         primary_log_pos: "{{ queue_number }}"
         primary_host: 192.168.56.241
@@ -364,15 +497,78 @@
         primary_password: "{{ db_replication_password_on_worpress }}"
       when: ansible_hostname == "replica"
 
+    - name: Start replication process
+      community.mysql.mysql_replication:
+        mode: startreplica
+      when: ansible_hostname == "replica"
 
+- name: Instalation prometheus, loki, grafana 
+  become: true
+  gather_facts: false
+  hosts: monitoring
+  tags:
+    - monitoring
+  tasks:
+    - name: Copy prometheus repo file
+      copy:
+        src: files/prometheus.repo
+        dest: /etc/yum.repos.d/prometheus.repo
+        mode: '0644'
 
+    - name: Copy grafana repo file
+      copy:
+        src: files/grafana.repo
+        dest: /etc/yum.repos.d/grafana.repo
+        mode: '0644'
 
+    - name: Install prometheus 
+      yum:
+        name: prometheus
+        state: present
 
+    - name: Copy prometheus config
+      copy:
+        src: files/prometheus.yml
+        dest: /etc/prometheus/prometheus.yml
 
+    - name: Install grafana
+      yum:
+        name: grafana
+        state: present
 
+    - name: Install loki
+      yum:
+        name: loki
+        state: present
 
+    - name: Start prometheus
+      systemd:
+        name: prometheus
+        state: started
+        enabled: true
 
+    - name: Start grafana
+      systemd:
+        name: grafana-server.service
+        state: started
+        enabled: true
 
+    - name: Start loki
+      systemd:
+        name: loki
+        state: started
+        enabled: true
+
+    - name: Install prometheus node exporter
+      yum:
+        name: node_exporter
+        state: present
+
+    - name: Started prometheus node exporter
+      systemd:
+        name: node_exporter
+        state: restarted
+        enabled: true
 
 
 

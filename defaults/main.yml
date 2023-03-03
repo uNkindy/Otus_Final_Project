@@ -14,5 +14,5 @@ db_wordpress_password_on_worpress: 12345678
 db_root_password_on_replica: 12345678
 
 #For start replication
-bin_log_number:
-queue_number:
+bin_log_number: mysql-bin.000004
+queue_number: 120

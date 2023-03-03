@@ -1,0 +1,5 @@
+[Unit]
+Description=Database backup service
+[Service]
+Type=oneshot
+ExecStart=/root/db_backup.sh
