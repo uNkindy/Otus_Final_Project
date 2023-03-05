@@ -71,9 +71,12 @@ cd /path_to_project && vagrant up
     ansible-playbook final_project.yml -t monitoring
     ```
     При этом на ВМ monitoring будут развернуты: Prometheus (version 1.8.2), Loki (version 2.7.4), Grafana (version 9.4.3), Prometheus Node exporter (version 1.5.0).
-    - IP адрес Prometheus: __localhost:9090 (192.168.56.243:9090)__;
-    - IP адрес Grafana: __localhost:3000 (192.168.56.243:3000)__;
-    - IP адресс Loki: __localhost:3100 (192.168.56.243:3100)__;
+
+| Name | IP |
+| --- | --- |
+|  IP адрес Prometheus | localhost:9090 (192.168.56.243:9090) |
+|  IP адрес Grafana | localhost:3000 (192.168.56.243:3000) |
+|  IP адрес Loki | localhost:3100 (192.168.56.243:3100) |
 ___
 #### 4. Настройка мониторинга.
 Для настройки мониторинга в Grafana устанавливается dashboard __11074__;
