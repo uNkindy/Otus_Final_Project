@@ -6,11 +6,11 @@ ___
     -- __Hashicorp Vagrant__ (для работы необходим VPN для скачивания образов с Vagrant Cloud) version >= 2.2.19;
     -- __Ansible version__ >= 2.10.17 (python => 3.8.10);
     -- __Git version__ >= 2.30.2; 
-- перед запуском виртуальных машин командой __"vagrant up"__ необходимо проверить соответствие портов и путей к ssh-ключам в файле inventory/[hosts.yml](); 
+- перед запуском виртуальных машин командой __"vagrant up"__ необходимо проверить соответствие портов и путей к ssh-ключам в файле inventory/[hosts.yml](https://github.com/uNkindy/Otus_Final_Project/blob/main/inventory/hosts.yml); 
 ___
 #### 2. Описание стенда:
-- стенд представляет собой 3 виртуальные машины со следующими характеристиками, завдаваемыми в [Vagrantfile]():
-__ВМ 1:__
+- стенд представляет собой 3 виртуальные машины со следующими характеристиками, завдаваемыми в [Vagrantfile](https://github.com/uNkindy/Otus_Final_Project/blob/main/Vagrantfile):
+> __ВМ 1:__
 Hostname: wordpress;
 OS: Centos 7 (kernel 3.10);
 RAM: 2 Gb;
@@ -40,12 +40,12 @@ git clone https://github.com/uNkindy/Otus_Final_Project.git
 ```console
 cd /path_to_project && vagrant up
 ```
-- __Этап 3__: после создания ВМ приступить к разворачиванию конфигурации на виртуальных машинах при помощи [Ansible Playbook](). С целью удобства и контролирования процесса разворачивания конфигурации запуск плейбука производится в несколько этапов:
+- __Этап 3__: после создания ВМ приступить к разворачиванию конфигурации на виртуальных машинах при помощи [Ansible Playbook](https://github.com/uNkindy/Otus_Final_Project/blob/main/final_project.yml). С целью удобства и контролирования процесса разворачивания конфигурации запуск плейбука производится в несколько этапов:
     - разворачиваем конфигурацию на ВМ wordpress:
     ```console
     ansible-playbook final_project.yml -t wordpress
     ```
-    При этом на ВМ wordpress будут развернуты: Apache httpd (version 2.4.6), php 7.4, MySQL (version 8.0.32), Prometheus Node exporter (version 1.5.0), Loki Promtail (2.7.4), xtrabackup (version 2.3.6). Для корректной установки пакетов плейбук копирует на ВМ файлы репозиториев MySQL, Grafana, Prometheus. На ВМ копируются два скрипта [__bin-log.sh__]() и [__db_backup.sh__](). Первый скрипт отправляет на хост информацию номера файла bin.log и номер строки в файле для последующей настройки репликации. Второй скрипт совместно с [Init]() и [timer]() файлами каждые 5 минут (ИПС) делают дамп и полную копию базы данных wordpress. В MySQL создается 2 пользователя: wordpress и replication. Пароли для данных пользователей вынесены в отдельный [файл]().
+    При этом на ВМ wordpress будут развернуты: Apache httpd (version 2.4.6), php 7.4, MySQL (version 8.0.32), Prometheus Node exporter (version 1.5.0), Loki Promtail (2.7.4), xtrabackup (version 2.3.6). Для корректной установки пакетов плейбук копирует на ВМ файлы репозиториев MySQL, Grafana, Prometheus. На ВМ копируются два скрипта [__bin-log.sh__](https://github.com/uNkindy/Otus_Final_Project/blob/main/files/bin-log.sh) и [__db_backup.sh__](https://github.com/uNkindy/Otus_Final_Project/blob/main/files/db_backup.sh). Первый скрипт отправляет на хост информацию номера файла bin.log и номер строки в файле для последующей настройки репликации. Второй скрипт совместно с [Init](https://github.com/uNkindy/Otus_Final_Project/blob/main/files/backup.service) и [timer](https://github.com/uNkindy/Otus_Final_Project/blob/main/files/backup.timer) файлами каждые 5 минут (ИПС) делают дамп и полную копию базы данных wordpress. В MySQL создается 2 пользователя: wordpress и replication. Пароли для данных пользователей вынесены в отдельный [файл](https://github.com/uNkindy/Otus_Final_Project/blob/main/defaults/main.yml).
     IP адрес wordpress: __localhost:8081 (192.168.56.241:80)__.
     - разворачиваем конфигурацию на ВМ replica:
     ```console
@@ -56,7 +56,7 @@ cd /path_to_project && vagrant up
     ```console
     ansible-playbook final_project.yml -t replication
     ```
-    При этом на ВМ wordpress делается дамп базы данных wordpress, копируется на ВМ replica и применятеся к БД wordpress на реплике. Далее в корневой папке проекта создается файл bin-log.txt с акутальными настройками для настройки репликации. Эти значения нужно внести в файл настроек [main.yml]().
+    При этом на ВМ wordpress делается дамп базы данных wordpress, копируется на ВМ replica и применятеся к БД wordpress на реплике. Далее в корневой папке проекта создается файл bin-log.txt с акутальными настройками для настройки репликации. Эти значения нужно внести в файл настроек [main.yml](https://github.com/uNkindy/Otus_Final_Project/blob/main/defaults/main.yml).
     - запуск процесса репликации:
     ```console
     ansible-playbook final_project.yml -t starting
