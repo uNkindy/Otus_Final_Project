@@ -10,27 +10,27 @@ ___
 ___
 #### 2. Описание стенда:
 - стенд представляет собой 3 виртуальные машины со следующими характеристиками, завдаваемыми в [Vagrantfile](https://github.com/uNkindy/Otus_Final_Project/blob/main/Vagrantfile):
- __ВМ 1:__
 
  |Name|Parameter|
  | --- | --- |
+| __ВМ1__ | |
 | Hostname | wordpress |
 | OS | Centos 7 (kernel 3.10) |
 | RAM | 2 Gb |
 | IP | 192.168.56.241/24 |
 | Forward Ports | 80 (guest) > 8081 (host) - wordpress, 9100 (guest) > 9101 (host) - Prometheus node exporter, 9080 (host) > 9081 (host) - Loki Promtail |
-__ВМ 2:__
-Hostname: replica;
-OS: Centos 7 (kernel 3.10);
-RAM: 2 Gb;
-IP: 192.168.56.242/24;
-Forward Ports: - ;
-__ВМ 3:__
-Hostname: moitoring;
-OS: Centos 7 (kernel 3.10);
-RAM: 2 Gb;
-IP: 192.168.56.243/24;
-Forward Ports: 9090 (guest) > 9090 (host) - Prometheus Server, 9100 (guest) > 9101 (host) - Prometheus node exporter, 9080 (host) > 9081 (host) - Loki Promtail;
+| __ВМ 2:__ | | 
+| Hostname | replica |
+| OS | Centos 7 (kernel 3.10) |
+|RAM | 2 Gb |
+|IP | 192.168.56.242/24 |
+|Forward Ports | - |
+| __ВМ 3:__ | |
+| Hostname | moitoring |
+| OS | Centos 7 (kernel 3.10) |
+| RAM | 2 Gb |
+| IP | 192.168.56.243/24 |
+| Forward Ports | 9090 (guest) > 9090 (host) - Prometheus Server, 9100 (guest) > 9101 (host) - Prometheus node exporter, 9080 (host) > 9081 (host) - Loki Promtail |
 __Схема стенда:__
 <a href="https://ibb.co/8BJY85S"><img src="https://i.ibb.co/0XksJMd/final-project-shema.jpg" alt="final-project-shema" border="0" /></a>
 ___
