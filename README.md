@@ -3,9 +3,9 @@
 ___
 #### 1. Требования к окружению для его развертывания:
 - для корректного запуска стенда необходимо следующее окружение:
-    -- __Hashicorp Vagrant__ (для работы необходим VPN для скачивания образов с Vagrant Cloud) version >= 2.2.19;
-    -- __Ansible version__ >= 2.10.17 (python => 3.8.10);
-    -- __Git version__ >= 2.30.2; 
+    - __Hashicorp Vagrant__ (для работы необходим VPN для скачивания образов с Vagrant Cloud) version >= 2.2.19;
+    - __Ansible version__ >= 2.10.17 (python => 3.8.10);
+    - __Git version__ >= 2.30.2; 
 - перед запуском виртуальных машин командой __"vagrant up"__ необходимо проверить соответствие портов и путей к ssh-ключам в файле inventory/[hosts.yml](https://github.com/uNkindy/Otus_Final_Project/blob/main/inventory/hosts.yml); 
 ___
 #### 2. Описание стенда:
