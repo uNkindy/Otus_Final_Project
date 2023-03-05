@@ -10,8 +10,11 @@ ___
 ___
 #### 2. Описание стенда:
 - стенд представляет собой 3 виртуальные машины со следующими характеристиками, завдаваемыми в [Vagrantfile](https://github.com/uNkindy/Otus_Final_Project/blob/main/Vagrantfile):
-> __ВМ 1:__
-Hostname: wordpress;
+ __ВМ 1:__
+ 
+ |Name|Parameter|
+ | --- | --- |
+| Hostname | wordpress |
 OS: Centos 7 (kernel 3.10);
 RAM: 2 Gb;
 IP: 192.168.56.241/24;
