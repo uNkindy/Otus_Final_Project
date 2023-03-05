@@ -19,13 +19,13 @@ ___
 | RAM | 2 Gb |
 | IP | 192.168.56.241/24 |
 | Forward Ports | 80 (guest) > 8081 (host) - wordpress, 9100 (guest) > 9101 (host) - Prometheus node exporter, 9080 (host) > 9081 (host) - Loki Promtail |
-| __ВМ 2:__ | | 
+| __ВМ 2__ | | 
 | Hostname | replica |
 | OS | Centos 7 (kernel 3.10) |
 |RAM | 2 Gb |
 |IP | 192.168.56.242/24 |
 |Forward Ports | - |
-| __ВМ 3:__ | |
+| __ВМ 3__ | |
 | Hostname | moitoring |
 | OS | Centos 7 (kernel 3.10) |
 | RAM | 2 Gb |
