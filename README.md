@@ -31,6 +31,7 @@ ___
 | RAM | 2 Gb |
 | IP | 192.168.56.243/24 |
 | Forward Ports | 9090 (guest) > 9090 (host) - Prometheus Server, 9100 (guest) > 9101 (host) - Prometheus node exporter, 9080 (host) > 9081 (host) - Loki Promtail |
+
 __Схема стенда:__
 <a href="https://ibb.co/8BJY85S"><img src="https://i.ibb.co/0XksJMd/final-project-shema.jpg" alt="final-project-shema" border="0" /></a>
 ___
