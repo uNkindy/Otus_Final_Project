@@ -84,24 +84,32 @@
       yum:
         name: promtail
         state: present
+      tags: 
+        - promtail_wordpress
 
     - name: Copy loki promtail config
       copy:
         src:  files/config.yml
         dest: /etc/promtail/config.yml
         mode: '0777'
+      tags: 
+        - promtail_wordpress
 
     - name: Copy loki promtail config
       copy:
         src:  files/promtail.service
         dest: /etc/systemd/system/promtail.service
         mode: '0777'
+      tags: 
+        - promtail_wordpress
 
     - name: Started loki promtail
       systemd:
         name: promtail
         state: restarted
         enabled: true   
+      tags: 
+        - promtail_wordpress
 
 - name: Prepare and install MySQL on host "wordpress"
   become: true
@@ -368,30 +376,40 @@
       yum:
         name: promtail
         state: present
+      tags: 
+        - promtail_replica
 
     - name: Copy loki promtail config
       copy:
         src:  files/config.yml
         dest: /etc/promtail/config.yml
         mode: '0777'
+      tags: 
+        - promtail_replica
 
     - name: Copy loki promtail config
       copy:
         src:  files/promtail.service
         dest: /etc/systemd/system/promtail.service
         mode: '0777'
+      tags: 
+        - promtail_replica
 
     - name: Started loki promtail
       systemd:
         name: promtail
         state: started
         enabled: true  
+      tags: 
+        - promtail_replica
 
     - name: Started loki promtail
       systemd:
         name: promtail
         state: started
         enabled: true  
+      tags: 
+        - promtail_replica
 
 - name: Create replica database, add user "root"
   become: true
