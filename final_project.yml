@@ -61,13 +61,13 @@
         dest: /etc/yum.repos.d/prometheus.repo
         mode: '0644'
 
-    - name: Copy grafana repo file
-      copy:
-        src: files/grafana.repo
-        dest: /etc/yum.repos.d/grafana.repo
-        mode: '0644'
-      tags:
-        - ere
+    # - name: Copy grafana repo file
+    #   copy:
+    #     src: files/grafana.repo
+    #     dest: /etc/yum.repos.d/grafana.repo
+    #     mode: '0644'
+    #   tags:
+    #     - ere
         
     - name: Install prometheus node exporter
       yum:
@@ -80,36 +80,36 @@
         state: started
         enabled: true
 
-    - name: Install loki promtail
-      yum:
-        name: promtail
-        state: present
-      tags: 
-        - promtail_wordpress
+    # - name: Install loki promtail
+    #   yum:
+    #     name: promtail
+    #     state: present
+    #   tags: 
+    #     - promtail_wordpress
 
-    - name: Copy loki promtail config
-      copy:
-        src:  files/config.yml
-        dest: /etc/promtail/config.yml
-        mode: '0777'
-      tags: 
-        - promtail_wordpress
+    # - name: Copy loki promtail config
+    #   copy:
+    #     src:  files/config.yml
+    #     dest: /etc/promtail/config.yml
+    #     mode: '0777'
+    #   tags: 
+    #     - promtail_wordpress
 
-    - name: Copy loki promtail config
-      copy:
-        src:  files/promtail.service
-        dest: /etc/systemd/system/promtail.service
-        mode: '0777'
-      tags: 
-        - promtail_wordpress
+    # - name: Copy loki promtail config
+    #   copy:
+    #     src:  files/promtail.service
+    #     dest: /etc/systemd/system/promtail.service
+    #     mode: '0777'
+    #   tags: 
+    #     - promtail_wordpress
 
-    - name: Started loki promtail
-      systemd:
-        name: promtail
-        state: restarted
-        enabled: true   
-      tags: 
-        - promtail_wordpress
+    # - name: Started loki promtail
+    #   systemd:
+    #     name: promtail
+    #     state: restarted
+    #     enabled: true   
+    #   tags: 
+    #     - promtail_wordpress
 
 - name: Prepare and install MySQL on host "wordpress"
   become: true
@@ -372,44 +372,44 @@
         state: started
         enabled: true
 
-    - name: Install loki promtail
-      yum:
-        name: promtail
-        state: present
-      tags: 
-        - promtail_replica
+    # - name: Install loki promtail
+    #   yum:
+    #     name: promtail
+    #     state: present
+    #   tags: 
+    #     - promtail_replica
 
-    - name: Copy loki promtail config
-      copy:
-        src:  files/config.yml
-        dest: /etc/promtail/config.yml
-        mode: '0777'
-      tags: 
-        - promtail_replica
+    # - name: Copy loki promtail config
+    #   copy:
+    #     src:  files/config.yml
+    #     dest: /etc/promtail/config.yml
+    #     mode: '0777'
+    #   tags: 
+    #     - promtail_replica
 
-    - name: Copy loki promtail config
-      copy:
-        src:  files/promtail.service
-        dest: /etc/systemd/system/promtail.service
-        mode: '0777'
-      tags: 
-        - promtail_replica
+    # - name: Copy loki promtail config
+    #   copy:
+    #     src:  files/promtail.service
+    #     dest: /etc/systemd/system/promtail.service
+    #     mode: '0777'
+    #   tags: 
+    #     - promtail_replica
 
-    - name: Started loki promtail
-      systemd:
-        name: promtail
-        state: started
-        enabled: true  
-      tags: 
-        - promtail_replica
+    # - name: Started loki promtail
+    #   systemd:
+    #     name: promtail
+    #     state: started
+    #     enabled: true  
+    #   tags: 
+    #     - promtail_replica
 
-    - name: Started loki promtail
-      systemd:
-        name: promtail
-        state: started
-        enabled: true  
-      tags: 
-        - promtail_replica
+    # - name: Started loki promtail
+    #   systemd:
+    #     name: promtail
+    #     state: started
+    #     enabled: true  
+    #   tags: 
+    #     - promtail_replica
 
 - name: Create replica database, add user "root"
   become: true
@@ -595,6 +595,66 @@
         name: node_exporter
         state: restarted
         enabled: true
+
+- name: Install and run promtail
+  become: true
+  gather_facts: false
+  hosts: wordpress
+  tags:
+    - promtail
+  tasks:
+    - name: Copy grafana repo file
+      copy:
+        src: files/grafana.repo
+        dest: /etc/yum.repos.d/grafana.repo
+        mode: '0644'
+      tags:
+        - promtail_wordpress
+
+    - name: Install loki promtail
+      yum:
+        name: promtail
+        state: present
+      tags: 
+        - promtail_wordpress
+
+    - name: Copy loki promtail config
+      copy:
+        src:  files/config.yml
+        dest: /etc/promtail/config.yml
+        mode: '0777'
+      tags: 
+        - promtail_wordpress
+
+    - name: Copy loki promtail config
+      copy:
+        src:  files/promtail.service
+        dest: /etc/systemd/system/promtail.service
+        mode: '0777'
+      tags: 
+        - promtail_wordpress
+
+    - name: Started loki promtail
+      systemd:
+        name: promtail
+        state: restarted
+        enabled: true   
+      tags: 
+        - promtail_wordpress
+
+    - name: Daemon-reload promtail
+      systemd:
+        daemon_reload: true
+      tags: 
+        - promtail_wordpress
+
+    - name: Started loki promtail
+      systemd:
+        name: promtail
+        state: restarted
+        enabled: true   
+      tags: 
+        - promtail_wordpress
 
 
 
